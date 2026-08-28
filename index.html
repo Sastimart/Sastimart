@@ -1,110 +1,307 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Cache-Control": "no-store",
-};
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ef3b24">
+  <title>SastiMart — Smarter Finds, Better Deals</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      ...corsHeaders,
-    },
-  });
-}
+<header class="site-header">
+  <a class="brand" href="#top">
+    <img src="assets/sasti-mart-logo.jpg" alt="SastiMart logo">
+    <span>Sasti<span>Mart</span></span>
+  </a>
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+  <nav class="desktop-nav">
+    <a href="#deals">Deals</a>
+    <a href="#categories">Categories</a>
+    <a href="#how">How it works</a>
+    <a href="#bot">AutoBot</a>
+    <a href="#trust">Trust & policies</a>
+  </nav>
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
+  <div class="header-actions">
+    <button class="icon-btn" id="openSearch">⌕</button>
+    <button class="account-btn" id="openAccount">Sign up / Login</button>
+    <button class="cart-btn" id="openCart">Saved picks <b id="cartCount">0</b></button>
+    <button class="button button-dark owner-only" id="openAdmin">Owner</button>
+  </div>
 
-    if (url.pathname === "/api/health") {
-      return json({
-        ok: true,
-        service: "SastiMart MSG91 OTP Worker",
-      });
-    }
+  <button class="mobile-menu" id="mobileMenu">☰</button>
+</header>
 
-    if (
-      url.pathname === "/api/msg91/verify-access-token" &&
-      request.method === "POST"
-    ) {
-      let body;
+<main id="top">
 
-      try {
-        body = await request.json();
-      } catch {
-        return json(
-          { success: false, message: "Invalid JSON" },
-          400
-        );
-      }
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">CURATED DEALS · REAL VALUE</p>
+    <h1>Find the good stuff.<br><em>Skip the hunt.</em></h1>
+    <p class="lede">
+      SastiMart helps you discover deals from participating merchants,
+      compare available offers, and keep useful picks in one place.
+    </p>
 
-      const accessToken = String(body?.accessToken || "").trim();
+    <div class="hero-actions">
+      <a class="button button-coral" href="#deals">Explore deals <span>→</span></a>
+      <button class="text-button" id="watchDemo">See how it works <span>▶</span></button>
+    </div>
 
-      if (!accessToken) {
-        return json(
-          { success: false, message: "Missing access token" },
-          400
-        );
-      }
+    <div class="trust">
+      <div class="avatars"><i>₹</i><i>✓</i><i>★</i></div>
+      <span>Transparent affiliate shopping · no extra cost to you</span>
+    </div>
+  </div>
 
-      if (!env.MSG91_AUTHKEY) {
-        return json(
-          {
-            success: false,
-            message: "MSG91_AUTHKEY secret is not configured",
-          },
-          500
-        );
-      }
+  <div class="hero-art">
+    <div class="sun"></div>
+    <div class="blob"></div>
 
-      const upstream = await fetch(
-        "https://control.msg91.com/api/v5/widget/verifyAccessToken",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: JSON.stringify({
-            authkey: env.MSG91_AUTHKEY,
-            "access-token": accessToken,
-          }),
-        }
-      );
+    <div class="product-card floating-card">
+      <span class="tag">TODAY'S FIND</span>
+      <img id="heroProductImage"
+        src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80"
+        alt="Featured headphones">
+      <b>Studio Sound</b>
+      <small>Now 32% off</small>
+      <span class="price">₹10,999 <del>₹15,999</del></span>
+    </div>
 
-      const text = await upstream.text();
+    <div class="pill pill-one">✓ Price checked</div>
+    <div class="pill pill-two">♡ Saved for you</div>
+  </div>
+</section>
 
-      let payload;
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        payload = { raw: text };
-      }
+<section class="stats">
+  <div><strong>Multi-store</strong><span>affiliate discovery</span></div>
+  <div><strong>Deal Score</strong><span>quick value signal</span></div>
+  <div><strong>Price range</strong><span>smart filtering</span></div>
+  <div><strong>Saved picks</strong><span>wishlist & compare</span></div>
+</section>
 
-      if (!upstream.ok) {
-        return json(
-          {
-            success: false,
-            message: "MSG91 access-token verification failed",
-            provider: payload,
-          },
-          upstream.status
-        );
-      }
+<section class="category-explorer" id="categories">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">SHOP EVERYTHING</p>
+      <h2>Find a category</h2>
+    </div>
+    <span class="live-dot">100+ categories · search to explore</span>
+  </div>
 
-      return json({
-        success: true,
-        provider: payload,
-      });
-    }
+  <div class="category-toolbar">
+    <input id="categorySearch" type="search"
+      placeholder="Search categories, brands or product types…">
+    <button id="clearCategorySearch" class="filter-toggle">Clear</button>
+  </div>
 
-    return env.ASSETS.fetch(request);
-  },
-};
+  <div class="category-grid" id="categoryGrid"></div>
+</section>
+
+<section class="deals" id="deals">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">HANDPICKED FOR YOU</p>
+      <h2>Trending deals</h2>
+    </div>
+    <span class="live-dot">● Participating offers</span>
+  </div>
+
+  <div class="search-row">
+    <input class="product-search" id="productSearch"
+      type="search" placeholder="Search products or stores…">
+    <button class="filter-toggle" id="filterToggle">Filters</button>
+  </div>
+
+  <div class="filters" id="productCategoryFilters">
+    <button class="active" data-category="All">All</button>
+    <button data-category="Grocery">Grocery</button>
+    <button data-category="Women">Women</button>
+    <button data-category="Men">Men</button>
+    <button data-category="Kids">Kids</button>
+    <button data-category="Baby">Baby</button>
+    <button data-category="Electronics">Electronics</button>
+    <button data-category="Home">Home</button>
+    <button data-category="Beauty">Beauty</button>
+    <button data-category="Fashion">Fashion</button>
+    <button data-category="Health">Health</button>
+    <button data-category="Bags">Bags & Accessories</button>
+    <button data-category="Automotive">Automotive</button>
+    <button data-category="Sports">Sports</button>
+    <button data-category="Books">Books & Stationery</button>
+  </div>
+
+  <div class="price-filter" id="priceFilter">
+    <div class="price-filter-head">
+      <div>
+        <strong>Price range</strong>
+        <small id="priceRangeLabel">All prices</small>
+      </div>
+      <button type="button" class="clear-price" id="clearPriceFilter">Clear</button>
+    </div>
+
+    <div class="price-presets" id="pricePresets">
+      <button data-min="0" data-max="500">Under ₹500</button>
+      <button data-min="500" data-max="1000">₹500–₹1,000</button>
+      <button data-min="1000" data-max="2500">₹1,000–₹2,500</button>
+      <button data-min="2500" data-max="5000">₹2,500–₹5,000</button>
+      <button data-min="5000" data-max="10000">₹5,000–₹10,000</button>
+      <button data-min="10000" data-max="">₹10,000+</button>
+    </div>
+
+    <div class="custom-price">
+      <label>Min ₹<input id="priceMin" type="number"></label>
+      <span>to</span>
+      <label>Max ₹<input id="priceMax" type="number"></label>
+      <button id="applyPriceFilter">Apply</button>
+    </div>
+  </div>
+
+  <p class="selected-category" id="selectedCategory">Showing all products</p>
+  <div class="product-grid" id="productGrid"></div>
+</section>
+
+<section class="how" id="how">
+  <div class="how-visual">
+    <div class="orbit o1"></div>
+    <div class="orbit o2"></div>
+    <div class="bot-face">✦</div>
+    <span class="signal s1">⌁</span>
+    <span class="signal s2">✦</span>
+  </div>
+
+  <div class="how-copy">
+    <p class="eyebrow">SHOPPING, SIMPLIFIED</p>
+    <h2>More signal.<br><em>Less scrolling.</em></h2>
+    <p>
+      We organize participating merchant offers so you can compare
+      the details that matter before you leave SastiMart.
+    </p>
+
+    <ul>
+      <li><b>01</b><span><strong>We scan</strong> prices and promotions from partner stores.</span></li>
+      <li><b>02</b><span><strong>We compare</strong> the details that actually matter.</span></li>
+      <li><b>03</b><span><strong>You save</strong> with a confident click.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="bot-panel" id="bot">
+  <div>
+    <p class="eyebrow">FOR PARTNERS & CREATORS</p>
+    <h2>Meet your affiliate<br><em>AutoBot.</em></h2>
+    <p>
+      Manage participating stores, affiliate links, product data,
+      and tracking settings from one dashboard.
+    </p>
+    <button class="button button-dark" id="runBot">
+      AutoBot Active <span>✓</span>
+    </button>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <span></span><span></span><span></span>
+      <b>autobot activity</b>
+    </div>
+
+    <div id="botLog">
+      <p><i>●</i> Ready to sync partner catalog</p>
+      <p><i>→</i> 247 products queued</p>
+      <p><i>○</i> Waiting for start…</p>
+    </div>
+  </div>
+</section>
+
+<section class="trust-center" id="trust">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">TRUST & TRANSPARENCY</p>
+      <h2>Shop with clarity.</h2>
+    </div>
+    <span class="live-dot">Merchant checkout stays with the merchant</span>
+  </div>
+
+  <div class="trust-grid policy-cards">
+
+    <article>
+      <div class="policy-icon">🔒</div>
+      <b>Privacy Policy</b>
+      <p>Your privacy matters. We collect only information needed for account features and secure site operation.</p>
+      <button data-policy="privacy">Read Full Policy →</button>
+    </article>
+
+    <article>
+      <div class="policy-icon">📄</div>
+      <b>Terms of Service</b>
+      <p>Understand how SastiMart works, including merchant checkout, product information and account use.</p>
+      <button data-policy="terms">Read Full Terms →</button>
+    </article>
+
+    <article>
+      <div class="policy-icon">🔗</div>
+      <b>Affiliate Disclosure</b>
+      <p>Some links are affiliate links. Eligible purchases may generate a commission at no extra cost to you.</p>
+      <button data-policy="affiliate">Learn More →</button>
+    </article>
+
+    <article>
+      <div class="policy-icon">🎧</div>
+      <b>Contact Us</b>
+      <p>Have a question, feedback or concern? Reach out through our official contact channels.</p>
+      <button data-policy="contact">Contact SastiMart →</button>
+    </article>
+
+  </div>
+</section>
+
+</main>
+
+<section class="contact-social" id="contact">
+  <div>
+    <p class="eyebrow">CONTACT SASTIMART</p>
+    <h2>Need help? We’re here.</h2>
+    <p>For support, partnership or general enquiries, use the official SastiMart contact details below.</p>
+  </div>
+
+  <div class="contact-grid">
+    <a href="mailto:sastimartofficial@gmail.com">
+      <strong>✉ Email</strong>
+      <span>sastimartofficial@gmail.com</span>
+    </a>
+
+    <a href="tel:+917366005926">
+      <strong>☎ Contact</strong>
+      <span>7366005926 · 9241220084</span>
+    </a>
+
+    <a href="https://www.instagram.com/sastimartofficial"
+       target="_blank" rel="noopener noreferrer">
+      <strong>◎ Instagram</strong>
+      <span>@sastimartofficial</span>
+    </a>
+
+    <a href="https://t.me/sastimart"
+       target="_blank" rel="noopener noreferrer">
+      <strong>✈ Telegram</strong>
+      <span>Join SastiMart</span>
+    </a>
+
+    <a href="https://whatsapp.com/channel/0029Vb8g9T59Bb67QJLtHj3u"
+       target="_blank" rel="noopener noreferrer">
+      <strong>◉ WhatsApp Channel</strong>
+      <span>Follow SastiMart</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 SastiMart. All rights reserved.</p>
+</footer>
+
+<script src="https://unpkg.com/@authgear/web@6.0.0/dist/authgear-web.iife.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
